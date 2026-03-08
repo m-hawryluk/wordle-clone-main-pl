@@ -44,6 +44,20 @@ body {
   overflow-x: hidden;
 }
 
+html,
+body,
+.page-shell,
+.keyboard,
+.key,
+.start-button {
+  touch-action: manipulation;
+}
+
+.key,
+.start-button {
+  -webkit-tap-highlight-color: transparent;
+}
+
 body::before,
 body::after {
   content: "";

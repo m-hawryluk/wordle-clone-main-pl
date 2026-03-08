@@ -6,11 +6,12 @@ const startButton = document.querySelector("[data-start-button]");
 const heroImage = document.querySelector("[data-hero-image]");
 const heroFrame = document.querySelector("[data-hero-frame]");
 const celebrationLayer = document.querySelector("[data-celebration-layer]");
+const wordCountBadge = document.querySelector("[data-word-count]");
 
 const WORD_LENGTH = 5;
 const FLIP_STEP_DURATION = 320;
 const DANCE_ANIMATION_DURATION = 500;
-const REFERENCE_DATE = new Date(2026, 2, 8);
+const ROTATION_REFERENCE_DATE = new Date(2022, 0, 1);
 const KEY_STATE_PRIORITY = {
   wrong: 0,
   "wrong-location": 1,
@@ -40,7 +41,7 @@ const rawWordBank =
   Array.isArray(window.WORD_BANK) && window.WORD_BANK.length > 0
     ? window.WORD_BANK
     : FALLBACK_WORDS;
-const WORD_BANK = rawWordBank
+const parsedWordBank = rawWordBank
   .map((word, index) => {
     const display = String(word).trim();
     const normalized = normalizeWord(display);
@@ -56,7 +57,10 @@ const WORD_BANK = rawWordBank
       entry.normalized.length === WORD_LENGTH &&
       /^[a-z]{5}$/.test(entry.normalized)
   );
-const VALID_GUESSES = new Set(WORD_BANK.map((entry) => entry.normalized));
+const WORD_BANK = [
+  ...new Map(parsedWordBank.map((entry) => [entry.normalized, entry])).values(),
+];
+const VALID_GUESSES = new Set(parsedWordBank.map((entry) => entry.normalized));
 const targetEntry = pickTargetEntry();
 
 let hasStarted = false;
@@ -69,6 +73,7 @@ function init() {
   document.addEventListener("click", handleMouseClick);
   document.addEventListener("keydown", handleKeyPress);
   hydrateHeroImageState();
+  syncWordCountBadge();
   startButton.focus();
 }
 
@@ -88,6 +93,14 @@ function hydrateHeroImageState() {
   }
 }
 
+function syncWordCountBadge() {
+  if (wordCountBadge == null) {
+    return;
+  }
+
+  wordCountBadge.textContent = `${WORD_BANK.length} haseł z twojego słownika`;
+}
+
 function startGame() {
   if (hasStarted) return;
 
@@ -95,7 +108,7 @@ function startGame() {
   startScreen.classList.add("is-hidden");
   startScreen.setAttribute("aria-hidden", "true");
   startButton.disabled = true;
-  showAlert(`Powodzenia! Pula startowa: ${rawWordBank.length} słów.`, 2000);
+  showAlert(`Powodzenia! Dzisiejsze hasło pochodzi z puli ${WORD_BANK.length} haseł.`, 2200);
 }
 
 function handleMouseClick(event) {
@@ -178,7 +191,7 @@ function pickTargetEntry() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const reference = new Date(REFERENCE_DATE);
+  const reference = new Date(ROTATION_REFERENCE_DATE);
   reference.setHours(0, 0, 0, 0);
 
   const dayOffset = Math.floor(
