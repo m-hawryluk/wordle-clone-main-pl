@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Wordle: 8 Marca Dzień Kobiet Edition</title>
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="petal-rain" aria-hidden="true">
+        <span class="petal" style="--left: 6%; --size: 1rem; --delay: 0s; --duration: 18s; --rotate: 10deg;"></span>
+        <span class="petal" style="--left: 15%; --size: 1.2rem; --delay: 2.2s; --duration: 15s; --rotate: -20deg;"></span>
+        <span class="petal" style="--left: 28%; --size: 0.9rem; --delay: 5.4s; --duration: 20s; --rotate: 24deg;"></span>
+        <span class="petal" style="--left: 41%; --size: 1.1rem; --delay: 1.5s; --duration: 17s; --rotate: -14deg;"></span>
+        <span class="petal" style="--left: 56%; --size: 1rem; --delay: 4.7s; --duration: 19s; --rotate: 30deg;"></span>
+        <span class="petal" style="--left: 68%; --size: 1.25rem; --delay: 3.1s; --duration: 14s; --rotate: -28deg;"></span>
+        <span class="petal" style="--left: 81%; --size: 0.95rem; --delay: 6.1s; --duration: 16s; --rotate: 12deg;"></span>
+        <span class="petal" style="--left: 92%; --size: 1.15rem; --delay: 0.8s; --duration: 21s; --rotate: -18deg;"></span>
+      </div>
+
+      <section class="start-screen" data-start-screen>
+        <div class="start-card">
+          <div class="start-copy">
+            <p class="eyebrow">8 marca | Edycja specjalna</p>
+            <h1>Wordle: 8 Marca Dzień Kobiet Edition</h1>
+            <p class="lead">
+              Polska odsłona z bukietem tulipanów, miękkim światłem i hasłem
+              inspirowanym Dniem Kobiet.
+            </p>
+            <div class="start-badges">
+              <span class="badge">5-literowe hasło</span>
+              <span class="badge">Polskie komunikaty</span>
+              <span class="badge">Tulipanowy klimat</span>
+            </div>
+            <p class="hint">
+              Wskazówka: możesz wpisywać polskie znaki z klawiatury, a gra sama
+              uprości je do wersji bez ogonków.
+            </p>
+            <button class="start-button" type="button" data-start-button>
+              Zacznij grę
+            </button>
+          </div>
+
+          <div class="hero-frame" data-hero-frame>
+            <img
+              class="hero-image"
+              data-hero-image
+              src="8100n.jpg.webp"
+              alt="Bukiet czerwonych tulipanów na jasnym tle"
+            />
+            <div class="hero-fallback" aria-hidden="true"></div>
+            <div class="hero-caption">Bukiet na ekranie tytułowym</div>
+          </div>
+        </div>
+      </section>
+
+      <header class="game-header">
+        <p class="eyebrow">Polska edycja specjalna</p>
+        <div class="header-row">
+          <div>
+            <h2>Wordle: 8 Marca Dzień Kobiet Edition</h2>
+            <p>Odgadnij 5-literowe słowo w 6 próbach.</p>
+          </div>
+          <p class="header-note">
+            Dziś królują tulipany, pastelowy blask i odrobina celebracji.
+          </p>
+        </div>
+      </header>
+
+      <div class="alert-container" data-alert-container></div>
+      <div class="celebration-layer" data-celebration-layer aria-hidden="true"></div>
+
+      <div data-guess-grid class="guess-grid" aria-label="Plansza z próbami">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+
+      <div data-keyboard class="keyboard" aria-label="Klawiatura ekranowa">
+        <button class="key" data-key="Q" type="button">Q</button>
+        <button class="key" data-key="W" type="button">W</button>
+        <button class="key" data-key="E" type="button">E</button>
+        <button class="key" data-key="R" type="button">R</button>
+        <button class="key" data-key="T" type="button">T</button>
+        <button class="key" data-key="Y" type="button">Y</button>
+        <button class="key" data-key="U" type="button">U</button>
+        <button class="key" data-key="I" type="button">I</button>
+        <button class="key" data-key="O" type="button">O</button>
+        <button class="key" data-key="P" type="button">P</button>
+        <div class="space" aria-hidden="true"></div>
+        <button class="key" data-key="A" type="button">A</button>
+        <button class="key" data-key="S" type="button">S</button>
+        <button class="key" data-key="D" type="button">D</button>
+        <button class="key" data-key="F" type="button">F</button>
+        <button class="key" data-key="G" type="button">G</button>
+        <button class="key" data-key="H" type="button">H</button>
+        <button class="key" data-key="J" type="button">J</button>
+        <button class="key" data-key="K" type="button">K</button>
+        <button class="key" data-key="L" type="button">L</button>
+        <div class="space" aria-hidden="true"></div>
+        <button data-enter class="key large action-key" type="button">
+          Dalej
+        </button>
+        <button class="key" data-key="Z" type="button">Z</button>
+        <button class="key" data-key="X" type="button">X</button>
+        <button class="key" data-key="C" type="button">C</button>
+        <button class="key" data-key="V" type="button">V</button>
+        <button class="key" data-key="B" type="button">B</button>
+        <button class="key" data-key="N" type="button">N</button>
+        <button class="key" data-key="M" type="button">M</button>
+        <button
+          data-delete
+          class="key large action-key delete-key"
+          type="button"
+          aria-label="Usuń literę"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7.07L2.4 12l4.66-7H22v14zm-11.59-2L14 13.41 17.59 17 19 15.59 15.41 12 19 8.41 17.59 7 14 10.59 10.41 7 9 8.41 12.59 12 9 15.59z"
+            ></path>
+          </svg>
+          <span class="sr-only">Usuń</span>
+        </button>
+      </div>
+    </div>
+  </body>
+</html>
