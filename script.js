@@ -10,7 +10,7 @@ const celebrationLayer = document.querySelector("[data-celebration-layer]");
 const WORD_LENGTH = 5;
 const FLIP_STEP_DURATION = 320;
 const DANCE_ANIMATION_DURATION = 500;
-const TARGET_WORD = "kwiat";
+const REFERENCE_DATE = new Date(2026, 2, 8);
 const KEY_STATE_PRIORITY = {
   wrong: 0,
   "wrong-location": 1,
@@ -35,6 +35,29 @@ const LETTER_NORMALIZATION = {
   "ź": "z",
   "ż": "z",
 };
+const FALLBACK_WORDS = ["kwiat"];
+const rawWordBank =
+  Array.isArray(window.WORD_BANK) && window.WORD_BANK.length > 0
+    ? window.WORD_BANK
+    : FALLBACK_WORDS;
+const WORD_BANK = rawWordBank
+  .map((word, index) => {
+    const display = String(word).trim();
+    const normalized = normalizeWord(display);
+    return {
+      id: index,
+      display,
+      normalized,
+    };
+  })
+  .filter(
+    (entry) =>
+      entry.display.length === WORD_LENGTH &&
+      entry.normalized.length === WORD_LENGTH &&
+      /^[a-z]{5}$/.test(entry.normalized)
+  );
+const VALID_GUESSES = new Set(WORD_BANK.map((entry) => entry.normalized));
+const targetEntry = pickTargetEntry();
 
 let hasStarted = false;
 let isLocked = false;
@@ -72,7 +95,7 @@ function startGame() {
   startScreen.classList.add("is-hidden");
   startScreen.setAttribute("aria-hidden", "true");
   startButton.disabled = true;
-  showAlert("Powodzenia!", 1600);
+  showAlert(`Powodzenia! Pula startowa: ${rawWordBank.length} słów.`, 2000);
 }
 
 function handleMouseClick(event) {
@@ -141,6 +164,31 @@ function normalizeLetter(value) {
   return /^[a-z]$/.test(normalized) ? normalized : null;
 }
 
+function normalizeWord(value) {
+  return [...String(value).trim().toLowerCase()]
+    .map((character) => LETTER_NORMALIZATION[character] ?? character)
+    .join("");
+}
+
+function pickTargetEntry() {
+  if (WORD_BANK.length === 0) {
+    return { display: "kwiat", normalized: "kwiat" };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const reference = new Date(REFERENCE_DATE);
+  reference.setHours(0, 0, 0, 0);
+
+  const dayOffset = Math.floor(
+    (today.getTime() - reference.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const index = ((dayOffset % WORD_BANK.length) + WORD_BANK.length) % WORD_BANK.length;
+
+  return WORD_BANK[index];
+}
+
 function pressKey(letter) {
   const activeTiles = getActiveTiles();
   if (activeTiles.length >= WORD_LENGTH) {
@@ -183,9 +231,14 @@ async function submitGuess() {
   }
 
   const guess = activeTiles.map((tile) => tile.dataset.letter).join("");
+  if (!VALID_GUESSES.has(guess)) {
+    showAlert("Tego słowa nie ma na liście startowej");
+    shakeTiles(activeTiles);
+    return;
+  }
 
   isLocked = true;
-  const evaluation = evaluateGuess(guess, TARGET_WORD);
+  const evaluation = evaluateGuess(guess, targetEntry.normalized);
   await flipTiles(activeTiles, guess, evaluation);
   checkWinLose(guess, activeTiles);
 
@@ -307,9 +360,9 @@ function shakeTiles(tiles) {
 }
 
 function checkWinLose(guess, tiles) {
-  if (guess === TARGET_WORD) {
+  if (guess === targetEntry.normalized) {
     isGameOver = true;
-    showAlert("Brawo! To słowo to KWIAT!", 2600);
+    showAlert(`Brawo! Hasło to ${targetEntry.display.toUpperCase()}!`, 2600);
     danceTiles(tiles);
     launchCelebration();
     return;
@@ -318,7 +371,7 @@ function checkWinLose(guess, tiles) {
   const remainingTiles = guessGrid.querySelectorAll(".tile:not([data-letter])");
   if (remainingTiles.length === 0) {
     isGameOver = true;
-    showAlert(`Szukane słowo: ${TARGET_WORD.toUpperCase()}`, null);
+    showAlert(`Szukane słowo: ${targetEntry.display.toUpperCase()}`, null);
   }
 }
 
