@@ -11,7 +11,7 @@ Po wpisaniu slowa nacisnij `Dalej` albo Enter.
 
 Gra korzysta z 5-literowych hasel wyodrebnionych ze slownika `class_a.txt`.
 Dzienne haslo rotuje stabilnie po calej puli slow, zamiast resetowac sie do pierwszego wpisu.
-Polskie znaki z klawiatury sa akceptowane, ale w logice gry sa upraszczane do wersji bez ogonkow.
+Gra uzywa pelnych polskich znakow diakrytycznych w haslach i wpisach, bez upraszczania do ASCII.
 
 ## Kolory
 
