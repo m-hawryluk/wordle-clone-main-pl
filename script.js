@@ -16,6 +16,7 @@ const DANCE_ANIMATION_DURATION = 500;
 const PROVERB_SCROLL_SPEED_PX_PER_SEC = 43;
 const PROVERB_SCROLL_PADDING_PX = 24;
 const PROVERB_MIN_DURATION_MS = 4000;
+const PAGER_RESIZE_RESTART_THRESHOLD_PX = 8;
 const ROTATION_REFERENCE_DATE = new Date(2022, 0, 1);
 const KEY_STATE_PRIORITY = {
   wrong: 0,
@@ -251,6 +252,7 @@ let proverbLoopToken = 0;
 let proverbResizeTimerId = null;
 let activeProverb = null;
 let isPagerResizeBound = false;
+let lastPagerViewportWidth = 0;
 
 init();
 
@@ -294,6 +296,7 @@ function startProverbPager() {
 
   proverbQueue = prepareNextProverbQueue();
   proverbIndex = 0;
+  lastPagerViewportWidth = pagerViewport.clientWidth;
   runProverbLoop();
 
   if (!isPagerResizeBound) {
@@ -400,6 +403,19 @@ function handleProverbPagerResize() {
   if (activeProverb == null || pagerSentence == null || pagerViewport == null) {
     return;
   }
+
+  const nextViewportWidth = pagerViewport.clientWidth;
+  if (nextViewportWidth <= 0) {
+    return;
+  }
+
+  if (
+    Math.abs(nextViewportWidth - lastPagerViewportWidth) <
+    PAGER_RESIZE_RESTART_THRESHOLD_PX
+  ) {
+    return;
+  }
+  lastPagerViewportWidth = nextViewportWidth;
 
   if (proverbResizeTimerId != null) {
     window.clearTimeout(proverbResizeTimerId);
