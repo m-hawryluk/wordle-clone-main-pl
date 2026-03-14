@@ -17,7 +17,7 @@ const PROVERB_SCROLL_SPEED_PX_PER_SEC = 43;
 const PROVERB_SCROLL_PADDING_PX = 24;
 const PROVERB_MIN_DURATION_MS = 4000;
 const PAGER_RESIZE_RESTART_THRESHOLD_PX = 8;
-const ROTATION_REFERENCE_DATE = new Date(2022, 0, 1);
+const TARGET_ROTATION_STORAGE_KEY = "wordle-polish-target-list-v2";
 const KEY_STATE_PRIORITY = {
   wrong: 0,
   "wrong-location": 1,
@@ -239,6 +239,9 @@ const parsedWordBank = rawWordBank
 const WORD_BANK = [
   ...new Map(parsedWordBank.map((entry) => [entry.display, entry])).values(),
 ];
+const WORD_BANK_BY_DISPLAY = new Map(
+  WORD_BANK.map((entry) => [entry.display, entry])
+);
 const VALID_GUESSES = new Set(parsedWordBank.map((entry) => entry.display));
 const targetEntry = pickTargetEntry();
 
@@ -286,7 +289,8 @@ function syncWordCountBadge() {
     return;
   }
 
-  wordCountBadge.textContent = `${WORD_BANK.length} haseł z twojego słownika`;
+  const remainingWordCount = getRemainingWordCount();
+  wordCountBadge.textContent = `Pozostało ${remainingWordCount} z ${WORD_BANK.length} słów na liście`;
 }
 
 function startProverbPager() {
@@ -456,8 +460,8 @@ function startGame() {
   startScreen.setAttribute("aria-hidden", "true");
   startButton.disabled = true;
   showAlert(
-    `Powodzenia! Dzisiejsze hasło pochodzi z puli ${WORD_BANK.length} haseł.`,
-    2200
+    "Powodzenia! Słowo znika z listy dopiero po poprawnym odgadnięciu.",
+    2400
   );
 }
 
@@ -534,19 +538,179 @@ function pickTargetEntry() {
     return { display: "kwiat" };
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const reference = new Date(ROTATION_REFERENCE_DATE);
-  reference.setHours(0, 0, 0, 0);
-
-  const dayOffset = Math.floor(
-    (today.getTime() - reference.getTime()) / (1000 * 60 * 60 * 24)
+  const resolvedRotation = resolveCurrentTargetRotationState(
+    readTargetRotationState()
   );
-  const index =
-    ((dayOffset % WORD_BANK.length) + WORD_BANK.length) % WORD_BANK.length;
+  writeTargetRotationState(resolvedRotation);
 
-  return WORD_BANK[index];
+  return WORD_BANK_BY_DISPLAY.get(resolvedRotation.currentWord) ?? WORD_BANK[0];
+}
+
+function readTargetRotationState() {
+  try {
+    const rawState = window.localStorage.getItem(TARGET_ROTATION_STORAGE_KEY);
+    if (rawState == null) {
+      return createEmptyTargetRotationState();
+    }
+
+    return normalizeTargetRotationState(JSON.parse(rawState));
+  } catch (error) {
+    return createEmptyTargetRotationState();
+  }
+}
+
+function writeTargetRotationState(state) {
+  try {
+    window.localStorage.setItem(
+      TARGET_ROTATION_STORAGE_KEY,
+      JSON.stringify({
+        currentWord: state.currentWord,
+        remainingWords: state.remainingWords,
+        solvedWords: state.solvedWords,
+      })
+    );
+  } catch (error) {
+    // Ignore storage write failures and keep the current in-memory target.
+  }
+}
+
+function resolveCurrentTargetRotationState(state) {
+  const normalizedState = normalizeTargetRotationState(state);
+  if (
+    normalizedState.currentWord != null &&
+    WORD_BANK_BY_DISPLAY.has(normalizedState.currentWord)
+  ) {
+    return normalizedState;
+  }
+
+  if (normalizedState.remainingWords.length === 0) {
+    return refillTargetRotationState(normalizedState);
+  }
+
+  const [currentWord, ...remainingWords] = normalizedState.remainingWords;
+  return {
+    currentWord,
+    remainingWords,
+    solvedWords: normalizedState.solvedWords,
+  };
+}
+
+function refillTargetRotationState(state) {
+  let solvedWords = [...state.solvedWords];
+  const solvedSet = new Set(solvedWords);
+  let availableWords = WORD_BANK.map((entry) => entry.display).filter(
+    (word) => !solvedSet.has(word)
+  );
+
+  if (availableWords.length === 0) {
+    solvedWords = [];
+    availableWords = WORD_BANK.map((entry) => entry.display);
+  }
+
+  const shuffledWords = shuffleArray([...availableWords]);
+
+  return {
+    currentWord: shuffledWords.shift() ?? WORD_BANK[0].display,
+    remainingWords: shuffledWords,
+    solvedWords,
+  };
+}
+
+function markTargetWordAsSolved(word) {
+  const normalizedWord = normalizeWord(word);
+  const resolvedRotation = resolveCurrentTargetRotationState(
+    readTargetRotationState()
+  );
+
+  if (resolvedRotation.currentWord !== normalizedWord) {
+    return getRemainingWordCount(resolvedRotation);
+  }
+
+  const solvedWords = resolvedRotation.solvedWords.includes(normalizedWord)
+    ? [...resolvedRotation.solvedWords]
+    : [...resolvedRotation.solvedWords, normalizedWord];
+  const nextRotation = normalizeTargetRotationState({
+    currentWord: null,
+    remainingWords: resolvedRotation.remainingWords,
+    solvedWords,
+  });
+
+  writeTargetRotationState(nextRotation);
+  return getRemainingWordCount(nextRotation);
+}
+
+function getRemainingWordCount(state = readTargetRotationState()) {
+  const normalizedState = normalizeTargetRotationState(state);
+  return (
+    normalizedState.remainingWords.length +
+    (normalizedState.currentWord != null ? 1 : 0)
+  );
+}
+
+function normalizeTargetRotationState(state) {
+  if (state == null || typeof state !== "object") {
+    return createEmptyTargetRotationState();
+  }
+
+  const solvedWords = Array.isArray(state.solvedWords)
+    ? sanitizeStoredWords(state.solvedWords)
+    : [];
+  const excludedWords = new Set(solvedWords);
+  const rawCurrentWord =
+    typeof state.currentWord === "string" ? normalizeWord(state.currentWord) : null;
+  const currentWord =
+    rawCurrentWord != null &&
+    WORD_BANK_BY_DISPLAY.has(rawCurrentWord) &&
+    !excludedWords.has(rawCurrentWord)
+      ? rawCurrentWord
+      : null;
+
+  if (currentWord != null) {
+    excludedWords.add(currentWord);
+  }
+
+  const remainingWords = Array.isArray(state.remainingWords)
+    ? sanitizeStoredWords(state.remainingWords, excludedWords)
+    : [];
+
+  return {
+    currentWord,
+    remainingWords,
+    solvedWords,
+  };
+}
+
+function sanitizeStoredWords(words, excludedWords = new Set()) {
+  const seen = new Set();
+  const sanitizedWords = [];
+
+  for (const word of words) {
+    if (typeof word !== "string") {
+      continue;
+    }
+
+    const normalizedWord = normalizeWord(word);
+    if (
+      excludedWords.has(normalizedWord) ||
+      !WORD_BANK_BY_DISPLAY.has(normalizedWord) ||
+      seen.has(normalizedWord)
+    ) {
+      continue;
+    }
+
+    seen.add(normalizedWord);
+    sanitizedWords.push(normalizedWord);
+  }
+
+  return sanitizedWords;
+}
+
+function createEmptyTargetRotationState() {
+  return {
+    currentWord: null,
+    remainingWords: [],
+    solvedWords: [],
+  };
 }
 
 function pressKey(rawKey) {
@@ -728,9 +892,13 @@ function shakeTiles(tiles) {
 function checkWinLose(guess, tiles) {
   if (guess === targetEntry.display) {
     isGameOver = true;
+    const remainingWordCount = markTargetWordAsSolved(targetEntry.display);
+    syncWordCountBadge();
     showAlert(
-      `Brawo! Hasło to ${targetEntry.display.toLocaleUpperCase("pl-PL")}!`,
-      2600
+      remainingWordCount === 0
+        ? `Brawo! Hasło to ${targetEntry.display.toLocaleUpperCase("pl-PL")}! To było ostatnie słowo na liście.`
+        : `Brawo! Hasło to ${targetEntry.display.toLocaleUpperCase("pl-PL")}! Skreślone z listy, pozostało ${remainingWordCount}.`,
+      3200
     );
     danceTiles(tiles);
     launchCelebration();
