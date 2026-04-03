@@ -22,8 +22,8 @@ Ciemny oznacza litere spoza hasla.
 ## Funkcje
 
 - Klawiatura ekranowa z polskimi znakami diakrytycznymi
-- Rotacja hasel z zapamietywaniem postepu w localStorage
-- Statystyki gry (rozegrane, wygrane, serie, rozklad prob)
-- Przycisk "Nastepna gra" po zakonczeniu rundy
-- Udostepnianie wynikow (kopiowanie siatki emoji do schowka)
+- Rotacja haseł z zapamiętywaniem postępu w localStorage
+- Statystyki gry (rozegrane, wygrane, serie, rozkład prób)
+- Przycisk "Następna gra" po zakończeniu rundy
+- Udostępnianie wyników (kopiowanie siatki emoji do schowka)
 - Animowane przysłowia polskie w nagłówku

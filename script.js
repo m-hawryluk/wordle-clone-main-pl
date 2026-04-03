@@ -1032,13 +1032,17 @@ function startNextGame() {
   showAlert("Nowe słowo! Powodzenia!", 1800);
 }
 
+function isCurrentGameWon() {
+  return guessHistory.length > 0 &&
+    guessHistory[guessHistory.length - 1].guess === targetEntry.display;
+}
+
 function shareResults() {
   if (guessHistory.length === 0) {
     return;
   }
 
-  const isWin = guessHistory.length > 0 &&
-    guessHistory[guessHistory.length - 1].guess === targetEntry.display;
+  const isWin = isCurrentGameWon();
   const scoreText = isWin ? `${guessHistory.length}/6` : "X/6";
   const header = `Wordle PL 🌷 ${scoreText}`;
 
@@ -1196,8 +1200,7 @@ function renderStats() {
   statsDistribution.innerHTML = "";
   const maxCount = Math.max(1, ...Object.values(stats.distribution));
 
-  const lastWinGuess = isGameOver && guessHistory.length > 0 &&
-    guessHistory[guessHistory.length - 1].guess === targetEntry.display
+  const lastWinGuess = isGameOver && isCurrentGameWon()
     ? guessHistory.length
     : null;
 
