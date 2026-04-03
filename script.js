@@ -9,6 +9,14 @@ const celebrationLayer = document.querySelector("[data-celebration-layer]");
 const wordCountBadge = document.querySelector("[data-word-count]");
 const pagerSentence = document.querySelector("[data-pager-sentence]");
 const pagerViewport = document.querySelector("[data-pager-viewport]");
+const gameOverBar = document.querySelector("[data-game-over-bar]");
+const gameOverMessage = document.querySelector("[data-game-over-message]");
+const nextGameBtn = document.querySelector("[data-next-game-btn]");
+const shareBtn = document.querySelector("[data-share-btn]");
+const statsToggle = document.querySelector("[data-stats-toggle]");
+const statsBackdrop = document.querySelector("[data-stats-backdrop]");
+const statsCloseBtn = document.querySelector("[data-stats-close]");
+const statsDistribution = document.querySelector("[data-stats-distribution]");
 
 const WORD_LENGTH = 5;
 const FLIP_STEP_DURATION = 320;
@@ -18,6 +26,7 @@ const PROVERB_SCROLL_PADDING_PX = 24;
 const PROVERB_MIN_DURATION_MS = 4000;
 const PAGER_RESIZE_RESTART_THRESHOLD_PX = 8;
 const TARGET_ROTATION_STORAGE_KEY = "wordle-polish-target-list-v2";
+const STATS_STORAGE_KEY = "wordle-polish-stats-v1";
 const KEY_STATE_PRIORITY = {
   wrong: 0,
   "wrong-location": 1,
@@ -243,11 +252,12 @@ const WORD_BANK_BY_DISPLAY = new Map(
   WORD_BANK.map((entry) => [entry.display, entry])
 );
 const VALID_GUESSES = new Set(parsedWordBank.map((entry) => entry.display));
-const targetEntry = pickTargetEntry();
+let targetEntry = pickTargetEntry();
 
 let hasStarted = false;
 let isLocked = false;
 let isGameOver = false;
+let guessHistory = [];
 let proverbQueue = [];
 let proverbIndex = 0;
 let proverbAnimationId = null;
@@ -265,6 +275,8 @@ function init() {
   hydrateHeroImageState();
   syncWordCountBadge();
   startProverbPager();
+  bindStatsModal();
+  bindGameOverBar();
   startButton.focus();
 }
 
@@ -768,6 +780,7 @@ async function submitGuess() {
 
   isLocked = true;
   const evaluation = evaluateGuess(guess, targetEntry.display);
+  guessHistory.push({ guess, evaluation: [...evaluation] });
   await flipTiles(activeTiles, guess, evaluation);
   checkWinLose(guess, activeTiles);
 
@@ -894,6 +907,7 @@ function checkWinLose(guess, tiles) {
     isGameOver = true;
     const remainingWordCount = markTargetWordAsSolved(targetEntry.display);
     syncWordCountBadge();
+    recordGameResult(true, guessHistory.length);
     showAlert(
       remainingWordCount === 0
         ? `Brawo! Hasło to ${targetEntry.display.toLocaleUpperCase("pl-PL")}! To było ostatnie słowo na liście.`
@@ -902,16 +916,19 @@ function checkWinLose(guess, tiles) {
     );
     danceTiles(tiles);
     launchCelebration();
+    showGameOverBar(true);
     return;
   }
 
   const remainingTiles = guessGrid.querySelectorAll(".tile:not([data-letter])");
   if (remainingTiles.length === 0) {
     isGameOver = true;
+    recordGameResult(false, guessHistory.length);
     showAlert(
       `Szukane słowo: ${targetEntry.display.toLocaleUpperCase("pl-PL")}`,
-      null
+      5000
     );
+    showGameOverBar(false);
   }
 }
 
@@ -949,6 +966,263 @@ function launchCelebration() {
       },
       { once: true }
     );
+  }
+}
+
+function showGameOverBar(isWin) {
+  if (gameOverBar == null || gameOverMessage == null) {
+    return;
+  }
+
+  gameOverMessage.textContent = isWin
+    ? "Gratulacje! Udało Ci się!"
+    : `Nie udało się. Hasło: ${targetEntry.display.toLocaleUpperCase("pl-PL")}`;
+  gameOverBar.classList.add("is-visible");
+  gameOverBar.setAttribute("aria-hidden", "false");
+}
+
+function hideGameOverBar() {
+  if (gameOverBar == null) {
+    return;
+  }
+
+  gameOverBar.classList.remove("is-visible");
+  gameOverBar.setAttribute("aria-hidden", "true");
+}
+
+function bindGameOverBar() {
+  if (nextGameBtn != null) {
+    nextGameBtn.addEventListener("click", startNextGame);
+  }
+
+  if (shareBtn != null) {
+    shareBtn.addEventListener("click", shareResults);
+  }
+}
+
+function startNextGame() {
+  hideGameOverBar();
+
+  const allTiles = guessGrid.querySelectorAll(".tile");
+  allTiles.forEach((tile) => {
+    tile.textContent = "";
+    delete tile.dataset.letter;
+    delete tile.dataset.state;
+    tile.classList.remove("flip", "reveal", "shake", "dance");
+  });
+
+  const allKeys = keyboard.querySelectorAll("[data-key]");
+  allKeys.forEach((key) => {
+    const currentState = key.dataset.state;
+    if (currentState != null) {
+      key.classList.remove(currentState);
+      delete key.dataset.state;
+    }
+  });
+
+  const alerts = alertContainer.querySelectorAll(".alert");
+  alerts.forEach((alert) => alert.remove());
+
+  targetEntry = pickTargetEntry();
+  isGameOver = false;
+  isLocked = false;
+  guessHistory = [];
+
+  syncWordCountBadge();
+  showAlert("Nowe słowo! Powodzenia!", 1800);
+}
+
+function shareResults() {
+  if (guessHistory.length === 0) {
+    return;
+  }
+
+  const isWin = guessHistory.length > 0 &&
+    guessHistory[guessHistory.length - 1].guess === targetEntry.display;
+  const scoreText = isWin ? `${guessHistory.length}/6` : "X/6";
+  const header = `Wordle PL 🌷 ${scoreText}`;
+
+  const emojiGrid = guessHistory
+    .map((entry) =>
+      entry.evaluation
+        .map((state) => {
+          if (state === "correct") return "🟩";
+          if (state === "wrong-location") return "🟨";
+          return "⬛";
+        })
+        .join("")
+    )
+    .join("\n");
+
+  const shareText = `${header}\n\n${emojiGrid}`;
+
+  if (navigator.clipboard != null && navigator.clipboard.writeText != null) {
+    navigator.clipboard.writeText(shareText).then(
+      () => showAlert("Skopiowano do schowka!", 1400),
+      () => showAlert("Nie udało się skopiować", 1400)
+    );
+  } else {
+    showAlert("Schowek niedostępny", 1400);
+  }
+}
+
+function bindStatsModal() {
+  if (statsToggle != null) {
+    statsToggle.addEventListener("click", openStatsModal);
+  }
+
+  if (statsCloseBtn != null) {
+    statsCloseBtn.addEventListener("click", closeStatsModal);
+  }
+
+  if (statsBackdrop != null) {
+    statsBackdrop.addEventListener("click", (event) => {
+      if (event.target === statsBackdrop) {
+        closeStatsModal();
+      }
+    });
+  }
+}
+
+function openStatsModal() {
+  if (statsBackdrop == null) {
+    return;
+  }
+
+  renderStats();
+  statsBackdrop.classList.add("is-visible");
+  statsBackdrop.setAttribute("aria-hidden", "false");
+}
+
+function closeStatsModal() {
+  if (statsBackdrop == null) {
+    return;
+  }
+
+  statsBackdrop.classList.remove("is-visible");
+  statsBackdrop.setAttribute("aria-hidden", "true");
+}
+
+function readStats() {
+  try {
+    const rawStats = window.localStorage.getItem(STATS_STORAGE_KEY);
+    if (rawStats == null) {
+      return createEmptyStats();
+    }
+
+    const parsed = JSON.parse(rawStats);
+    return normalizeStats(parsed);
+  } catch {
+    return createEmptyStats();
+  }
+}
+
+function writeStats(stats) {
+  try {
+    window.localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(stats));
+  } catch {
+    // Ignore storage write failures.
+  }
+}
+
+function createEmptyStats() {
+  return {
+    played: 0,
+    wins: 0,
+    currentStreak: 0,
+    maxStreak: 0,
+    distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
+  };
+}
+
+function normalizeStats(raw) {
+  if (raw == null || typeof raw !== "object") {
+    return createEmptyStats();
+  }
+
+  const played = typeof raw.played === "number" && raw.played >= 0 ? Math.floor(raw.played) : 0;
+  const wins = typeof raw.wins === "number" && raw.wins >= 0 ? Math.min(Math.floor(raw.wins), played) : 0;
+  const currentStreak = typeof raw.currentStreak === "number" && raw.currentStreak >= 0 ? Math.floor(raw.currentStreak) : 0;
+  const maxStreak = typeof raw.maxStreak === "number" && raw.maxStreak >= 0 ? Math.max(Math.floor(raw.maxStreak), currentStreak) : currentStreak;
+
+  const distribution = {};
+  for (let i = 1; i <= 6; i += 1) {
+    const rawVal = raw.distribution != null ? raw.distribution[i] : 0;
+    distribution[i] = typeof rawVal === "number" && rawVal >= 0 ? Math.floor(rawVal) : 0;
+  }
+
+  return { played, wins, currentStreak, maxStreak, distribution };
+}
+
+function recordGameResult(isWin, guessCount) {
+  const stats = readStats();
+  stats.played += 1;
+
+  if (isWin) {
+    stats.wins += 1;
+    stats.currentStreak += 1;
+    if (stats.currentStreak > stats.maxStreak) {
+      stats.maxStreak = stats.currentStreak;
+    }
+    const clampedGuessCount = Math.max(1, Math.min(guessCount, 6));
+    stats.distribution[clampedGuessCount] = (stats.distribution[clampedGuessCount] ?? 0) + 1;
+  } else {
+    stats.currentStreak = 0;
+  }
+
+  writeStats(stats);
+}
+
+function renderStats() {
+  const stats = readStats();
+
+  const playedEl = document.querySelector("[data-stat-played]");
+  const winPctEl = document.querySelector("[data-stat-win-pct]");
+  const streakEl = document.querySelector("[data-stat-streak]");
+  const maxStreakEl = document.querySelector("[data-stat-max-streak]");
+
+  if (playedEl != null) playedEl.textContent = String(stats.played);
+  if (winPctEl != null) {
+    const pct = stats.played > 0 ? Math.round((stats.wins / stats.played) * 100) : 0;
+    winPctEl.textContent = String(pct);
+  }
+  if (streakEl != null) streakEl.textContent = String(stats.currentStreak);
+  if (maxStreakEl != null) maxStreakEl.textContent = String(stats.maxStreak);
+
+  if (statsDistribution == null) {
+    return;
+  }
+
+  statsDistribution.innerHTML = "";
+  const maxCount = Math.max(1, ...Object.values(stats.distribution));
+
+  const lastWinGuess = isGameOver && guessHistory.length > 0 &&
+    guessHistory[guessHistory.length - 1].guess === targetEntry.display
+    ? guessHistory.length
+    : null;
+
+  for (let i = 1; i <= 6; i += 1) {
+    const count = stats.distribution[i] ?? 0;
+    const pct = Math.max(8, (count / maxCount) * 100);
+
+    const row = document.createElement("div");
+    row.className = "dist-row";
+
+    const label = document.createElement("span");
+    label.className = "dist-label";
+    label.textContent = String(i);
+
+    const bar = document.createElement("div");
+    bar.className = "dist-bar";
+    if (lastWinGuess === i) {
+      bar.classList.add("is-highlight");
+    }
+    bar.style.width = `${pct}%`;
+    bar.textContent = String(count);
+
+    row.appendChild(label);
+    row.appendChild(bar);
+    statsDistribution.appendChild(row);
   }
 }
 

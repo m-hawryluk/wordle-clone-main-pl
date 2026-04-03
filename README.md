@@ -18,3 +18,12 @@ Gra uzywa pelnych polskich znakow diakrytycznych w haslach i wpisach, bez uprasz
 Zielony oznacza poprawna litere na poprawnym miejscu.
 Zloty oznacza poprawna litere na zlym miejscu.
 Ciemny oznacza litere spoza hasla.
+
+## Funkcje
+
+- Klawiatura ekranowa z polskimi znakami diakrytycznymi
+- Rotacja hasel z zapamietywaniem postepu w localStorage
+- Statystyki gry (rozegrane, wygrane, serie, rozklad prob)
+- Przycisk "Nastepna gra" po zakonczeniu rundy
+- Udostepnianie wynikow (kopiowanie siatki emoji do schowka)
+- Animowane przysłowia polskie w nagłówku

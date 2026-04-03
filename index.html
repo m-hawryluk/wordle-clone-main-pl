@@ -89,6 +89,13 @@
           <div>
             <h2>Wordle: 8 Marca Dzień Kobiet Edition</h2>
             <p>Odgadnij 5-literowe słowo w 6 próbach.</p>
+            <button class="stats-toggle" type="button" data-stats-toggle aria-label="Pokaż statystyki">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="18" y="3" width="4" height="18" rx="1"></rect>
+                <rect x="10" y="8" width="4" height="13" rx="1"></rect>
+                <rect x="2" y="13" width="4" height="8" rx="1"></rect>
+              </svg>
+            </button>
           </div>
           <section class="proverb-pager" aria-live="polite" aria-label="Losowe przysłowia polskie">
             <div class="pager-top">
@@ -211,6 +218,37 @@
           </svg>
           <span class="sr-only">Usuń</span>
         </button>
+      </div>
+      <div class="game-over-bar" data-game-over-bar aria-hidden="true">
+        <span class="game-over-message" data-game-over-message></span>
+        <div class="game-over-actions">
+          <button class="game-over-btn share-btn" type="button" data-share-btn>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+              <polyline points="16 6 12 2 8 6"></polyline>
+              <line x1="12" y1="2" x2="12" y2="15"></line>
+            </svg>
+            Udostępnij
+          </button>
+          <button class="game-over-btn next-btn" type="button" data-next-game-btn>Następna gra</button>
+        </div>
+      </div>
+
+      <div class="stats-modal-backdrop" data-stats-backdrop aria-hidden="true">
+        <div class="stats-modal" role="dialog" aria-label="Statystyki gry" data-stats-modal>
+          <div class="stats-modal-header">
+            <h3>Statystyki</h3>
+            <button class="stats-close-btn" type="button" data-stats-close aria-label="Zamknij statystyki">&times;</button>
+          </div>
+          <div class="stats-summary" data-stats-summary>
+            <div class="stat-box"><span class="stat-value" data-stat-played>0</span><span class="stat-label">Rozegrane</span></div>
+            <div class="stat-box"><span class="stat-value" data-stat-win-pct>0</span><span class="stat-label">% wygranych</span></div>
+            <div class="stat-box"><span class="stat-value" data-stat-streak>0</span><span class="stat-label">Aktualna seria</span></div>
+            <div class="stat-box"><span class="stat-value" data-stat-max-streak>0</span><span class="stat-label">Najlepsza seria</span></div>
+          </div>
+          <h4 class="stats-dist-title">Rozkład prób</h4>
+          <div class="stats-distribution" data-stats-distribution></div>
+        </div>
       </div>
     </div>
   </body>
